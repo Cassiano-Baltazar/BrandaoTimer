@@ -29,11 +29,21 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        // Chave fixa para instalar o app direto no celular (fora da loja).
+        // Ser sempre a mesma permite atualizar o app sem desinstalar, o que
+        // apagaria os treinos salvos. Não serve para publicar na Play Store.
+        create("sideload") {
+            storeFile = file("sideload.jks")
+            storePassword = "brandaotimer"
+            keyAlias = "brandao"
+            keyPassword = "brandaotimer"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("sideload")
         }
     }
 }
