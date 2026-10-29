@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../fakes.dart';
+
 void main() {
   late WorkoutRepository repository;
 
@@ -15,7 +17,13 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     repository = WorkoutRepository(await SharedPreferences.getInstance());
     await repository.save(initial);
-    await tester.pumpWidget(BrandaoTimerApp(repository: repository));
+    await tester.pumpWidget(
+      BrandaoTimerApp(
+        repository: repository,
+        announcer: FakeAnnouncer(),
+        screenAwake: FakeScreenAwake(),
+      ),
+    );
   }
 
   Future<void> openMenu(WidgetTester tester, String item) async {
@@ -69,8 +77,7 @@ void main() {
 
   testWidgets('edita um treino existente', (tester) async {
     await pumpApp(tester, [treinoA]);
-    await tester.tap(find.text('Treino A'));
-    await tester.pumpAndSettle();
+    await openMenu(tester, 'Editar');
 
     await tester.enterText(find.byKey(const Key('name')), 'Treino A2');
     await tester.tap(find.byKey(const Key('save')));
@@ -102,5 +109,21 @@ void main() {
     await tester.pumpAndSettle();
     expect(repository.load(), isEmpty);
     expect(find.text('Treino A'), findsNothing);
+  });
+
+  testWidgets('tocar no treino abre o timer', (tester) async {
+    await pumpApp(tester, [treinoA]);
+    await tester.tap(find.text('Treino A'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('PREPARE-SE'), findsOneWidget);
+
+    // Sai do timer para não deixar o Timer.periodic pendente.
+    await tester.tap(find.byTooltip('Encerrar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Encerrar'));
+    await tester.pumpAndSettle();
+    expect(find.text('Meus treinos'), findsOneWidget);
   });
 }

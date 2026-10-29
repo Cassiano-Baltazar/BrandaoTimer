@@ -2,16 +2,26 @@ import 'package:flutter/material.dart';
 
 import '../data/workout_repository.dart';
 import '../models/workout.dart';
+import '../services/announcer.dart';
+import '../services/screen_awake.dart';
 import '../utils/format.dart';
+import 'timer_screen.dart';
 import 'workout_edit_screen.dart';
 
-enum _Action { edit, duplicate, delete }
+enum _Action { start, edit, duplicate, delete }
 
 /// Tela inicial: lista dos treinos salvos.
 class WorkoutListScreen extends StatefulWidget {
-  const WorkoutListScreen({super.key, required this.repository});
+  const WorkoutListScreen({
+    super.key,
+    required this.repository,
+    required this.announcer,
+    required this.screenAwake,
+  });
 
   final WorkoutRepository repository;
+  final Announcer announcer;
+  final ScreenAwake screenAwake;
 
   @override
   State<WorkoutListScreen> createState() => _WorkoutListScreenState();
@@ -38,6 +48,19 @@ class _WorkoutListScreenState extends State<WorkoutListScreen> {
       ),
     );
     if (created != null) await _update([..._workouts, created]);
+  }
+
+  void _start(Workout workout) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TimerScreen(
+          workout: workout,
+          announcer: widget.announcer,
+          screenAwake: widget.screenAwake,
+        ),
+      ),
+    );
   }
 
   Future<void> _edit(Workout workout) async {
@@ -110,15 +133,20 @@ class _WorkoutListScreenState extends State<WorkoutListScreen> {
                     '${w.exerciseSeconds}s / ${w.restBetweenExercisesSeconds}s · '
                     '${formatDuration(w.totalDuration)}',
                   ),
-                  onTap: () => _edit(w),
+                  onTap: () => _start(w),
                   trailing: PopupMenuButton<_Action>(
                     tooltip: 'Opções',
                     onSelected: (action) => switch (action) {
+                      _Action.start => _start(w),
                       _Action.edit => _edit(w),
                       _Action.duplicate => _duplicate(w),
                       _Action.delete => _delete(w),
                     },
                     itemBuilder: (_) => const [
+                      PopupMenuItem(
+                        value: _Action.start,
+                        child: Text('Iniciar'),
+                      ),
                       PopupMenuItem(value: _Action.edit, child: Text('Editar')),
                       PopupMenuItem(
                         value: _Action.duplicate,
