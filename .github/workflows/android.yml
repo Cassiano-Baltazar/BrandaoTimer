@@ -3,7 +3,6 @@ name: Android
 on:
   push:
     branches: ['**']
-    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -50,8 +49,14 @@ jobs:
           name: brandao-timer-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
+      # Cada push no main vira uma release com o APK, fácil de baixar no
+      # celular pela página de releases.
       - name: Publicar release com o APK
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v0.1.${{ github.run_number }}
+          name: Brandão Timer v0.1.${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
           files: build/app/outputs/flutter-apk/app-release.apk
