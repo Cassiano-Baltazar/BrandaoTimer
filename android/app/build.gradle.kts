@@ -29,21 +29,28 @@ android {
         versionName = flutter.versionName
     }
 
+    // Chave fixa para instalar o app direto no celular (fora da loja). Ser
+    // sempre a mesma permite atualizar sem desinstalar, o que apagaria os
+    // treinos salvos. Vem de variáveis de ambiente (secrets do GitHub); sem
+    // elas, o build usa a chave de debug.
+    val sideloadKeystore = System.getenv("SIDELOAD_KEYSTORE_PATH")
+    val sideloadPassword = System.getenv("SIDELOAD_KEYSTORE_PASSWORD")
+    val hasSideloadKey = !sideloadKeystore.isNullOrEmpty() && !sideloadPassword.isNullOrEmpty()
+
     signingConfigs {
-        // Chave fixa para instalar o app direto no celular (fora da loja).
-        // Ser sempre a mesma permite atualizar o app sem desinstalar, o que
-        // apagaria os treinos salvos. Não serve para publicar na Play Store.
-        create("sideload") {
-            storeFile = file("sideload.jks")
-            storePassword = "brandaotimer"
-            keyAlias = "brandao"
-            keyPassword = "brandaotimer"
+        if (hasSideloadKey) {
+            create("sideload") {
+                storeFile = file(sideloadKeystore!!)
+                storePassword = sideloadPassword
+                keyAlias = "brandao"
+                keyPassword = sideloadPassword
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("sideload")
+            signingConfig = signingConfigs.getByName(if (hasSideloadKey) "sideload" else "debug")
         }
     }
 }
