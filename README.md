@@ -15,6 +15,6 @@ flutter run
 
 ## Instalar no Android
 
-Cada versão marcada com uma tag `v*` gera uma release no GitHub com o arquivo `app-release.apk`. Abra a página de releases no celular, baixe o APK e toque nele para instalar (o Android vai pedir para permitir instalação desta fonte). Para atualizar, instale o APK novo por cima: os treinos salvos continuam.
+Cada push no `main` gera uma release no GitHub com o arquivo `app-release.apk`. Abra a página de releases no celular, baixe o APK e toque nele para instalar (o Android vai pedir para permitir instalação desta fonte). Para atualizar, instale o APK novo por cima: os treinos salvos continuam.
 
 Todo push também roda os testes e gera o APK como artefato do GitHub Actions.
