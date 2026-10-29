@@ -1,4 +1,4 @@
-name: Android
+name: Build
 
 on:
   push:
@@ -19,6 +19,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          # Evita baixar tudo do Maven a cada build (já deu erro 429).
+          cache: gradle
 
       - uses: subosito/flutter-action@v2
         with:
@@ -60,3 +62,39 @@ jobs:
           target_commitish: ${{ github.sha }}
           make_latest: true
           files: build/app/outputs/flutter-apk/app-release.apk
+
+  # App de iPhone sem assinatura (IPA). Para instalar, assine com o seu
+  # Apple ID usando o Sideloadly ou o AltStore; com Apple ID grátis o app
+  # vale por 7 dias.
+  ios:
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.8'
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Gerar IPA sem assinatura
+        run: |
+          flutter build ios --release --no-codesign --build-number=${{ github.run_number }}
+          mkdir -p build/ipa/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ipa/Payload/
+          cd build/ipa && zip -qr BrandaoTimer-unsigned.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brandao-timer-ipa
+          path: build/ipa/BrandaoTimer-unsigned.ipa
+
+      - name: Anexar IPA à release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.${{ github.run_number }}
+          files: build/ipa/BrandaoTimer-unsigned.ipa
