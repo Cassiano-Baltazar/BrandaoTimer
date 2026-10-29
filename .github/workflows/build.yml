@@ -28,6 +28,12 @@ jobs:
           channel: stable
           cache: true
 
+      # O número do build vira o versionCode do Android, que nunca pode
+      # diminuir. Ao renomear o workflow o run_number recomeçou do 1, então
+      # somamos 100 para continuar acima das versões já publicadas.
+      - name: Calcular número do build
+        run: echo "BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 100))" >> "$GITHUB_ENV"
+
       - run: flutter pub get
       - run: dart format --output=none --set-exit-if-changed lib test
       - run: flutter analyze
@@ -44,7 +50,7 @@ jobs:
       - name: Gerar APK
         env:
           SIDELOAD_KEYSTORE_PASSWORD: ${{ secrets.SIDELOAD_KEYSTORE_PASSWORD }}
-        run: flutter build apk --release --build-number=${{ github.run_number }}
+        run: flutter build apk --release --build-number=$BUILD_NUMBER
 
       - uses: actions/upload-artifact@v4
         with:
@@ -57,8 +63,8 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.${{ github.run_number }}
-          name: Brandão Timer v0.1.${{ github.run_number }}
+          tag_name: v0.1.${{ env.BUILD_NUMBER }}
+          name: Brandão Timer v0.1.${{ env.BUILD_NUMBER }}
           target_commitish: ${{ github.sha }}
           make_latest: true
           files: build/app/outputs/flutter-apk/app-release.apk
@@ -78,11 +84,17 @@ jobs:
           channel: stable
           cache: true
 
+      # O número do build vira o versionCode do Android, que nunca pode
+      # diminuir. Ao renomear o workflow o run_number recomeçou do 1, então
+      # somamos 100 para continuar acima das versões já publicadas.
+      - name: Calcular número do build
+        run: echo "BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 100))" >> "$GITHUB_ENV"
+
       - run: flutter pub get
 
       - name: Gerar IPA sem assinatura
         run: |
-          flutter build ios --release --no-codesign --build-number=${{ github.run_number }}
+          flutter build ios --release --no-codesign --build-number=$BUILD_NUMBER
           mkdir -p build/ipa/Payload
           cp -R build/ios/iphoneos/Runner.app build/ipa/Payload/
           cd build/ipa && zip -qr BrandaoTimer-unsigned.ipa Payload
@@ -96,5 +108,5 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.${{ github.run_number }}
+          tag_name: v0.1.${{ env.BUILD_NUMBER }}
           files: build/ipa/BrandaoTimer-unsigned.ipa
